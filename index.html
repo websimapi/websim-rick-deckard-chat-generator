@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rick Deckard Chat Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: 'Courier New', monospace;
+        }
+
+        .container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .image-display {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        .image-display.active {
+            opacity: 1;
+        }
+
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #00ff00;
+            font-size: 24px;
+            text-align: center;
+            z-index: 100;
+        }
+
+        .overlay {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: #00ff00;
+            font-size: 18px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 20px;
+            border-radius: 5px;
+            z-index: 50;
+        }
+
+        .beat-indicator {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 20px;
+            height: 20px;
+            background: #ff0000;
+            border-radius: 50%;
+            z-index: 50;
+            opacity: 0.3;
+            transition: opacity 0.1s;
+        }
+
+        .beat-indicator.pulse {
+            opacity: 1;
+            transform: scale(1.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="loading" id="loading">
+            GENERATING RICK DECKARD SEQUENCES...<br>
+            <span id="progress">0/10</span>
+        </div>
+        
+        <div class="beat-indicator" id="beatIndicator"></div>
+        
+        <div class="overlay" id="overlay" style="display: none;">
+            RICK DECKARD IN THE CHAT
+        </div>
+    </div>
+
+    <script>
+        class RickDeckardGenerator {
+            constructor() {
+                this.images = [];
+                this.currentIndex = 0;
+                this.imageElements = [];
+                this.isPlaying = false;
+                this.bpm = 170;
+                this.beatsPerSwitch = 4;
+                
+                // Calculate timing: 170 BPM = 170/60 beats per second
+                // Switch every 4 beats = 4 / (170/60) = 1.41 seconds
+                this.switchInterval = (this.beatsPerSwitch / (this.bpm / 60)) * 1000;
+                this.beatInterval = (60 / this.bpm) * 1000;
+                
+                this.init();
+            }
+
+            async init() {
+                await this.generateImages();
+                this.setupImageElements();
+                this.startCycling();
+            }
+
+            async generateImages() {
+                const prompts = [
+                    "Rick Deckard from Blade Runner, noir detective in futuristic city, cyberpunk style, dramatic lighting",
+                    "Rick Deckard character portrait, Harrison Ford as blade runner, dark atmospheric, neon lights",
+                    "Rick Deckard in chat room, futuristic computer interface, cyberpunk detective, glowing screens",
+                    "Rick Deckard running through neon-lit streets, blade runner aesthetic, rain and lights",
+                    "Rick Deckard portrait, intense expression, futuristic noir detective, dramatic shadows",
+                    "Rick Deckard in synth-wave environment, 80s cyberpunk, purple and blue neon",
+                    "Rick Deckard action pose, blade runner movie style, dark future cityscape background",
+                    "Rick Deckard close-up, detective noir style, cyberpunk lighting, intense gaze",
+                    "Rick Deckard in digital chat interface, holographic displays, futuristic communication",
+                    "Rick Deckard final scene, epic cyberpunk moment, dramatic lighting, blade runner atmosphere"
+                ];
+
+                for (let i = 0; i < prompts.length; i++) {
+                    try {
+                        const result = await websim.imageGen({
+                            prompt: prompts[i],
+                            aspect_ratio: "16:9"
+                        });
+                        
+                        this.images.push(result.url);
+                        document.getElementById('progress').textContent = `${i + 1}/10`;
+                        
+                        // Small delay between generations
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                    } catch (error) {
+                        console.error('Error generating image:', error);
+                        // Add a fallback or retry logic if needed
+                    }
+                }
+            }
+
+            setupImageElements() {
+                const container = document.querySelector('.container');
+                const loading = document.getElementById('loading');
+                
+                // Remove loading screen
+                loading.style.display = 'none';
+                document.getElementById('overlay').style.display = 'block';
+
+                // Create image elements
+                this.images.forEach((imageUrl, index) => {
+                    const imageDiv = document.createElement('div');
+                    imageDiv.className = 'image-display';
+                    imageDiv.style.backgroundImage = `url(${imageUrl})`;
+                    
+                    if (index === 0) {
+                        imageDiv.classList.add('active');
+                    }
+                    
+                    container.appendChild(imageDiv);
+                    this.imageElements.push(imageDiv);
+                });
+            }
+
+            startCycling() {
+                this.isPlaying = true;
+                
+                // Start beat indicator
+                this.startBeatIndicator();
+                
+                // Start image cycling
+                setInterval(() => {
+                    this.switchToNextImage();
+                }, this.switchInterval);
+            }
+
+            startBeatIndicator() {
+                const beatIndicator = document.getElementById('beatIndicator');
+                
+                setInterval(() => {
+                    beatIndicator.classList.add('pulse');
+                    setTimeout(() => {
+                        beatIndicator.classList.remove('pulse');
+                    }, 100);
+                }, this.beatInterval);
+            }
+
+            switchToNextImage() {
+                if (this.imageElements.length === 0) return;
+                
+                // Remove active class from current image
+                this.imageElements[this.currentIndex].classList.remove('active');
+                
+                // Move to next image
+                this.currentIndex = (this.currentIndex + 1) % this.imageElements.length;
+                
+                // Add active class to new image
+                this.imageElements[this.currentIndex].classList.add('active');
+            }
+        }
+
+        // Start the application
+        document.addEventListener('DOMContentLoaded', () => {
+            new RickDeckardGenerator();
+        });
+
+        // Add some keyboard controls
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                // Could add pause/play functionality here
+            }
+        });
+    </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"4c6229722a6346bc8eb5cb0e5eae5d41","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>
+
